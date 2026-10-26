@@ -1,23 +1,36 @@
+"""
+full_sweep.py - CHẠY TOÀN BỘ THÍ NGHIỆM: sinh bộ mẫu Sobol rồi chạy run_scenario cho từng mẫu.
+
+Số lần chạy = SOBOL_N × 10 (với 4 tham số). N = 512 -> 5120 lần. Chạy rất lâu.
+Mỗi lần chạy xong ghi ngay 1 dòng vào results.csv, nên nếu dừng giữa chừng vẫn giữ được phần đã chạy.
+Lần chạy nào bị lỗi vẫn có dòng, các cột kết quả để trống và cột 'error' ghi lý do.
+
+CẢNH BÁO: mỗi lần bắt đầu, file results.csv bị GHI ĐÈ (xóa kết quả cũ). Sao lưu trước khi chạy lại.
+
+Đầu vào: config.PROBLEM (tên + khoảng giá trị 4 tham số), config.SOBOL_N, config.SOBOL_SEED
+Đầu ra:  config.RESULTS_CSV (mặc định results.csv)
+Bước tiếp theo: làm sạch results.csv -> results_clean.csv, rồi chạy analyze_sobol.py
+"""
 import csv
 import time
 from SALib.sample import sobol
-from sweep import run_scenario   # tai su dung ham da viet va kiem chung trong sweep.py
+from sweep import run_scenario   # tái sử dụng hàm đã viết và kiểm chứng trong sweep.py
 import config as cfg
 
-#============ Dinh nghia 4 input (xem config.py) =======
+#============ Định nghĩa 4 input (xem config.py) và sinh bộ mẫu =======
 problem = cfg.PROBLEM
 
 sample_kwargs = {} if cfg.SOBOL_SEED is None else {'seed': cfg.SOBOL_SEED}
 param_values = sobol.sample(problem, cfg.SOBOL_N, **sample_kwargs)
 
-#============ Chuan bi file CSV =======
+#============ Chuẩn bị file CSV (ghi đè file cũ, chỉ ghi dòng tiêu đề) =======
 output_file = cfg.RESULTS_CSV
 fieldnames = cfg.CSV_FIELDS
 
 with open(output_file, 'w', newline='') as f:
     csv.DictWriter(f, fieldnames=fieldnames).writeheader()
 
-#============ Chay tung bo input, ghi ket qua ngay sau moi lan =======
+#============ Chạy từng bộ input, ghi kết quả ngay sau mỗi lần =======
 start = time.time()
 for i, row in enumerate(param_values):
     ego_s, tgt_s, dist, fric = row
@@ -35,6 +48,7 @@ for i, row in enumerate(param_values):
             'error': '',
         }
     except Exception as e:
+        # lỗi thì vẫn ghi 1 dòng để giữ đúng thứ tự mẫu (Sobol cần đúng thứ tự)
         record = {
             'ego_speed': ego_s, 'target_speed': tgt_s,
             'initial_distance': dist, 'friction': fric,

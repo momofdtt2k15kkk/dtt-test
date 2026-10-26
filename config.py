@@ -2,6 +2,7 @@
 config.py - nơi duy nhất để tinh chỉnh toàn bộ mô phỏng.
 Chỉ sửa file này; các script khác (script.py, sweep.py, full_sweep.py,
 analyze_sobol.py, check_sobol_sample.py, find_spawn.py) đều đọc từ đây.
+Sửa gì thì phải chạy lại bước nào: xem README.md, mục "Khi thầy yêu cầu sửa".
 """
 
 #============ Kết nối CARLA =======
