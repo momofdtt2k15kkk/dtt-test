@@ -1,7 +1,5 @@
 # Kiểm thử xe tự hành trên CARLA bằng phân tích độ nhạy Sobol
 
-Tài liệu cho người tiếp nhận dự án. Không cần đọc từng dòng code: mỗi file `.py` có một đoạn ghi chú ở đầu file nói nó làm gì, còn tài liệu này nối các file lại với nhau và chỉ chỗ cần sửa khi có yêu cầu mới.
-
 Mục lục
 
 1. [Dự án làm gì](#1-dự-án-làm-gì)
