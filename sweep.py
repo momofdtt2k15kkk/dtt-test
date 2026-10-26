@@ -1,21 +1,19 @@
 import carla
+import config as cfg
 
 #============ Ket noi CARLA =======
-client = carla.Client('127.0.0.1', 2000)
-client.set_timeout(10.0)
+client = carla.Client(cfg.HOST, cfg.PORT)
+client.set_timeout(cfg.TIMEOUT)
 world = client.get_world()
 carla_map = world.get_map()
 blueprint_library = world.get_blueprint_library()
-
-SPAWN_INDEX = 117
-TICKS = 250
 
 #============ Ham do toc do =======
 def get_speed_kmh(vehicle):
     v = vehicle.get_velocity()
     return 3.6 * (v.x**2 + v.y**2 + v.z**2) ** 0.5
 
-def speed_control(vehicle, target_kmh, K=0.15):
+def speed_control(vehicle, target_kmh, K=cfg.SPEED_K):
     error = target_kmh - get_speed_kmh(vehicle)
     if error > 0:
         return carla.VehicleControl(throttle=min(error * K, 1.0), brake=0.0, steer=0.0)
@@ -37,22 +35,22 @@ def run_scenario(ego_speed, target_speed, initial_distance, friction):
         # bat synchronous mode
         settings = world.get_settings()
         settings.synchronous_mode = True
-        settings.fixed_delta_seconds = 0.05
+        settings.fixed_delta_seconds = cfg.DT
         world.apply_settings(settings)
 
         # spawn ego
         spawn_points = carla_map.get_spawn_points()
-        ego_bp = blueprint_library.filter('vehicle.tesla.model3')[0]
-        ego = world.spawn_actor(ego_bp, spawn_points[SPAWN_INDEX])
+        ego_bp = blueprint_library.filter(cfg.EGO_BLUEPRINT)[0]
+        ego = world.spawn_actor(ego_bp, spawn_points[cfg.SPAWN_INDEX])
         actors.append(ego)
         world.tick()   # cap nhat vi tri truoc khi doc get_location()
 
         # spawn target cach ego dung initial_distance met, cung lan
         ego_wp = carla_map.get_waypoint(ego.get_location())
         target_wp = ego_wp.next(initial_distance)[0]
-        target_bp = blueprint_library.filter('vehicle.audi.a2')[0]
+        target_bp = blueprint_library.filter(cfg.TARGET_BLUEPRINT)[0]
         target_transform = target_wp.transform
-        target_transform.location.z += 0.5
+        target_transform.location.z += cfg.TARGET_Z_OFFSET
         target = world.spawn_actor(target_bp, target_transform)
         actors.append(target)
         world.tick()
@@ -68,29 +66,29 @@ def run_scenario(ego_speed, target_speed, initial_distance, friction):
         friction_bp = blueprint_library.find('static.trigger.friction')
         friction_bp.set_attribute('friction', str(friction))
 
-        extent = carla.Location(20000.0, 20000.0, 1000.0)  # 200m x 200m x 10m
-        friction_bp.set_attribute('extent_x', str(extent.x))
-        friction_bp.set_attribute('extent_y', str(extent.y))
-        friction_bp.set_attribute('extent_z', str(extent.z))
+        extent_x, extent_y, extent_z = cfg.FRICTION_EXTENT
+        friction_bp.set_attribute('extent_x', str(extent_x))
+        friction_bp.set_attribute('extent_y', str(extent_y))
+        friction_bp.set_attribute('extent_z', str(extent_z))
 
         friction_transform = carla.Transform(ego.get_location(), carla.Rotation())
         friction_trigger = world.spawn_actor(friction_bp, friction_transform)
         actors.append(friction_trigger)
 
         # chay mo phong
-        SETTLE_TICKS = 10  # so tick dau bi nhieu vat ly gia (banh-than xe chua dong bo), bo qua khi tinh min accel/jerk
+        SETTLE_TICKS = cfg.SETTLE_TICKS  # so tick dau bi nhieu vat ly gia (banh-than xe chua dong bo), bo qua khi tinh min accel/jerk
         distance_log = []
         accel_log = []
         jerk_log = []
         ttc_log = []
         prev_accel = 0.0
 
-        for i in range(TICKS):
+        for i in range(cfg.TICKS):
             d_now = ego.get_location().distance(target.get_location())
-            safe_gap = get_speed_kmh(ego) / 3.6 * 2.0 + 5.0
+            safe_gap = get_speed_kmh(ego) / 3.6 * cfg.SAFE_GAP_TIME + cfg.SAFE_GAP_MIN
 
             if d_now < safe_gap:
-                ego.apply_control(carla.VehicleControl(throttle=0.0, brake=0.8, steer=0.0))
+                ego.apply_control(carla.VehicleControl(throttle=0.0, brake=cfg.EMERGENCY_BRAKE, steer=0.0))
             else:
                 ego.apply_control(speed_control(ego, ego_speed))
             target.apply_control(speed_control(target, target_speed))
@@ -104,12 +102,12 @@ def run_scenario(ego_speed, target_speed, initial_distance, friction):
             long_accel = acc.x * fv.x + acc.y * fv.y + acc.z * fv.z
             accel_log.append(long_accel)
 
-            jerk = (long_accel - prev_accel) / 0.05
+            jerk = (long_accel - prev_accel) / cfg.DT
             jerk_log.append(jerk)
             prev_accel = long_accel
 
             closing_speed = (get_speed_kmh(ego) - get_speed_kmh(target)) / 3.6
-            if closing_speed > 0.1:
+            if closing_speed > cfg.TTC_MIN_CLOSING_SPEED:
                 ttc_log.append(d_now / closing_speed)
         return {
             "min_distance": min(distance_log),
@@ -132,10 +130,6 @@ def run_scenario(ego_speed, target_speed, initial_distance, friction):
 
 #============ Chay thu vai bo input =======
 if __name__ == '__main__':
-    test_cases = [
-        (60.0, 40.0, 20.0, 1.0),   # goc, ma sat binh thuong
-        (60.0, 40.0, 20.0, 0.3),   # ma sat thap -> phanh kem hieu qua -> min distance phai NHO hon
-    ]
-    for ego_s, tgt_s, dist, fric in test_cases:
+    for ego_s, tgt_s, dist, fric in cfg.TEST_CASES:
         r = run_scenario(ego_s, tgt_s, dist, friction=fric)
         print(f"ego={ego_s} target={tgt_s} dist={dist} friction={fric} -> {r}")

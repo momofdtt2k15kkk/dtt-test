@@ -1,22 +1,14 @@
 import pandas as pd
 from SALib.analyze import sobol
+import config as cfg
 
-#============ Dinh nghia bai toan - PHAI KHOP HET VOI luc sinh mau (full_sweep.py) ====
-problem = {
-    'num_vars': 4,
-    'names': ['ego_speed', 'target_speed', 'initial_distance', 'friction'],
-    'bounds': [
-        [40.0, 100.0],
-        [20.0, 70.0],
-        [15.0, 60.0],
-        [0.3, 1.0],
-    ]
-}
+#============ Dinh nghia bai toan - dung chung config.PROBLEM voi luc sinh mau (full_sweep.py) ====
+problem = cfg.PROBLEM
 
-df = pd.read_csv('results_clean.csv')
+df = pd.read_csv(cfg.RESULTS_CLEAN_CSV)
 
 # dung inv_ttc thay cho min_ttc (da xu ly ngoai lai o buoc truoc)
-outputs = ['min_distance', 'min_acceleration', 'min_jerk', 'inv_ttc']
+outputs = cfg.ANALYZE_OUTPUTS
 
 for out in outputs:
     Y = df[out].to_numpy()

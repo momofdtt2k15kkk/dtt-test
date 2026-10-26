@@ -2,26 +2,17 @@ import csv
 import time
 from SALib.sample import sobol
 from sweep import run_scenario   # tai su dung ham da viet va kiem chung trong sweep.py
+import config as cfg
 
-#============ Dinh nghia 4 input =======
-problem = {
-    'num_vars': 4,
-    'names': ['ego_speed', 'target_speed', 'initial_distance', 'friction'],
-    'bounds': [
-        [40.0, 100.0],
-        [20.0, 70.0],
-        [15.0, 60.0],
-        [0.3, 1.0],
-    ]
-}
+#============ Dinh nghia 4 input (xem config.py) =======
+problem = cfg.PROBLEM
 
-N = 512
-param_values = sobol.sample(problem, N)
+sample_kwargs = {} if cfg.SOBOL_SEED is None else {'seed': cfg.SOBOL_SEED}
+param_values = sobol.sample(problem, cfg.SOBOL_N, **sample_kwargs)
 
 #============ Chuan bi file CSV =======
-output_file = 'results.csv'
-fieldnames = ['ego_speed', 'target_speed', 'initial_distance', 'friction',
-              'min_distance', 'min_acceleration', 'min_jerk', 'min_ttc', 'error']
+output_file = cfg.RESULTS_CSV
+fieldnames = cfg.CSV_FIELDS
 
 with open(output_file, 'w', newline='') as f:
     csv.DictWriter(f, fieldnames=fieldnames).writeheader()
