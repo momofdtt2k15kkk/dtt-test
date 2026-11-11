@@ -1,0 +1,46 @@
+
+
+ten: buoc_1                 ### tên kịch bản, dùng đặt tên thư mục kết quả trong results/
+thoi_gian: 15               ### thời gian mô phỏng (giây). Để trống (null) = chạy mãi cho tới khi bấm ESC
+                            ###   số dòng trong Excel = thoi_gian / 0.04. Ví dụ 15 s = 375 dòng
+
+lo_trinh:
+  kieu: thang              
+  chieu_dai: 500          
+  doan_lui: 50.0            
+
+xe_ego:
+  loai_xe: vehicle.audi.a2  ### Ví dụ: vehicle.audi.a2, vehicle.tesla.model3,
+  toc_do: 15.0
+  gia_toc: 3.0 
+  diem_spawn: 10
+  chuyen_lan:               ### danh sách chuyển làn của Ego. Không chuyển thì để:  chuyen_lan: []
+    - {luc: 4.0,  lan: -1, quang_duong: 30}
+    ### 0 = làn lộ trình ban đầu,  -1 = sang trái 1 làn,  1 = sang phải 1 làn
+    ###   quang_duong: số MÉT xe đi trong lúc chuyển làn
+
+target_cars:
+  - ten: Xe_tai
+    bat: true 
+    loai_xe: vehicle.carlamotors.carlacola   
+    huong: cung_chieu
+    diem_spawn: null
+    khoang_cach: -20
+    lan: 0              
+    lech_ngang: 0.0
+    toc_do: 20.0
+    gia_toc: 3
+    chuyen_lan: []
+
+  - ten: target2 
+    bat: false 
+    loai_xe: vehicle.tesla.model3
+    huong: nguoc_chieu
+    diem_spawn: null
+    khoang_cach: 12
+    lan: 0          
+    lech_ngang: -1
+    toc_do: 6.0 
+    gia_toc: 3
+    chuyen_lan: []
+
